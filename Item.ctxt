@@ -1,0 +1,16 @@
+#BlueJ class context
+comment0.target=Item
+comment0.text=\r\n\ Write\ a\ description\ of\ class\ Item\ here.\r\n\r\n\ @author\ (your\ name)\r\n\ @version\ (a\ version\ number\ or\ a\ date)\r\n
+comment1.params=name\ description\ weight
+comment1.target=Item(java.lang.String,\ java.lang.String,\ int)
+comment1.text=\r\n\ Creates\ an\ item\ that\ take\ in\ a\ name,\ description\ and\ a\ weight.\r\n\ @param\ name\ The\ string\ name\ of\ the\ item\r\n\ @param\ description\ The\ item's\ description.\r\n\ @param\ weight\ The\ int\ weight\ value\ for\ an\ item.\r\n
+comment2.params=
+comment2.target=void\ printItemDetails()
+comment2.text=\r\n\ Print's\ the\ name,\ description\ and\ the\ weight\ for\ the\ item.\r\n
+comment3.params=
+comment3.target=int\ getWeight()
+comment3.text=\r\n\ Return's\ the\ weight\ of\ the\ item\r\n\ @return\ weight\ The\ int\ weight\ value\ for\ the\ item.\r\n
+comment4.params=item
+comment4.target=java.lang.String\ getName(Item)
+comment4.text=\r\n\ Retrieves\ the\ name\ of\ the\ item\ from\ the\ item\ object.\r\n\ @param\ item\ The\ item\ object\ whose\ string\ name\ you\ are\ trying\ to\ get.\r\n\ @return\ name\ The\ string\ name\ of\ the\ item.\r\n
+numComments=5

@@ -1,0 +1,674 @@
+import java.util.Stack;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.Random;
+// add items in which the player hides from moving characters
+/**
+ *  This class is the main class of the "World of Zuul" application. 
+ *  "World of Zuul" is a very simple, text based adventure game.  Users 
+ *  can walk around some scenery. That's all. It should really be extended 
+ *  to make it more interesting!
+ * 
+ *  To play this game, create an instance of this class and call the "play"
+ *  method.
+ * 
+ *  This main class creates and initialises all the others: it creates all
+ *  rooms, creates the parser and starts the game.  It also evaluates and
+ *  executes the commands that the parser returns.
+ * 
+ * @author  Michael Kölling and David J. Barnes
+ * @version 2016.02.29
+ */
+
+public class Game 
+{
+    private Parser parser;
+
+    private Room currentRoom;
+    private Stack<Room> stackRooms;
+
+    //private HashSet<Item> items;
+
+    private HashMap<Item, String> itemString;
+    private HashMap<String, Item>  stringToItem;
+
+    private Inventory inventory;
+
+    private int maximumWeight;
+    private int totalWeight; 
+
+    private Character mummy;
+
+    private ArrayList<String> mummyTalk;
+    private ArrayList<Room> rooms;
+    private Random roomIndex; 
+    /**
+     * Create the game and initialise its internal map.
+     */
+    public Game() 
+    {
+        createObjects();
+        parser = new Parser();
+        stackRooms = new Stack<>();
+        inventory = new Inventory();
+        mummyTalk = new ArrayList<>();
+        roomIndex = new Random();
+        maximumWeight = 20;
+    }
+
+    /**
+     * Create all the rooms and link their exits together.
+     */
+    private void createObjects()
+    {
+        Room pyramidCentre, cave, mummyRoom, artillery, sanctuary, testRoom, teleporter, artefact, hallOfStatues,outside,tomb,sewer,treasureRoom;
+
+        Item cake, boulder, statue, coffin, water, vase, bone, gun, bag, torch, treasure ;
+
+        // create the rooms
+        pyramidCentre = new Room("the middle of nowhere ", false);
+        cave = new Room("in a dark cave full of bats", false);
+        mummyRoom = new Room("in the mummy's resting room", false);
+        artillery = new Room("in a artillery room full of ancient weapons", false);
+        sanctuary = new Room("in a mysterious sanctuary", false);
+        teleporter = new Room("in a teleporter room", true);
+        artefact = new Room("in a room full of ancient artefacts", false);
+        hallOfStatues = new Room("in the hall of statues. Each item worth millions", false);
+        outside = new Room("outside the pyramid", false);
+        tomb = new Room("in a narrow passegeway that holds a coffin resting on one of the walls", false);
+        sewer = new Room("in a sewer system pathway", false);
+        treasureRoom = new Room("in a treasure room", false);
+        testRoom = new Room("Test Room", false);
+
+        rooms = new ArrayList<>();
+
+        rooms.add(pyramidCentre);
+        rooms.add(cave);
+        rooms.add(mummyRoom);
+        rooms.add(artillery);
+        rooms.add(sanctuary);
+        rooms.add(artefact);
+        rooms.add(hallOfStatues);
+        rooms.add(outside);
+        rooms.add(tomb);
+        rooms.add(sewer);
+        rooms.add(treasureRoom);
+
+        // initialise room exits
+        pyramidCentre.setExit("east", cave);
+        pyramidCentre.setExit("south", artillery);
+        pyramidCentre.setExit("west", mummyRoom);
+        pyramidCentre.setExit("north", artefact);
+
+        cave.setExit("west", pyramidCentre);
+
+        mummyRoom.setExit("east", pyramidCentre);
+        mummyRoom.setExit("north", teleporter);
+
+        artillery.setExit("north", pyramidCentre);
+        artillery.setExit("east", sanctuary);
+
+        teleporter.setExit("north", mummyRoom);
+        sanctuary.setExit("west", artillery);
+        sanctuary.setExit("down", tomb);
+
+        artefact.setExit("south", pyramidCentre);
+        artefact.setExit("up", hallOfStatues);
+
+        hallOfStatues.setExit("down", artefact);
+        hallOfStatues.setExit("east", outside);
+
+        outside.setExit("west", hallOfStatues);
+
+        tomb.setExit("up", sanctuary);
+        tomb.setExit("west", sewer);
+
+        sewer.setExit("east", tomb);
+        sewer.setExit("north",treasureRoom);
+
+        treasureRoom.setExit("south", sewer);
+
+        currentRoom = outside;  // start game outside
+
+        itemString = new HashMap<>();
+
+        //cake = new Item("Cake","High in calories.", 2);
+        boulder = new Item("Boulder", "Most likely used as a trap to prevent people from \nexploring the pyramid. Looks inactive.", 13);
+        water = new Item ("Water", "Water from this fountain apparently gives you the \nability to carry more weight in your inventory",0);
+        statue = new Item("Statue"," A statue of a pharaoh, this may be worth a lot.",4);
+        bag = new Item("Bag", "Used to carry items. I should take this.",0);
+        coffin = new Item("Coffin", "Brightly painted coffin. Not what i expected it to look like.", 21);
+        gun = new Item("Gun", "Looks funtional. 3 shots only. Should keep it just in case.",2);
+        torch = new Item("Torch", "Used to find my way through the dark",1);
+        bone = new Item("Bone", "Remains of a skeleton in a worn out pirate costume. Creepy.", 2);
+        treasure = new Item("Treasure", "A treasure chest full of gold. Hit the jackpot!",5);
+        vase = new Item("Vase", "A broken vase. There might be someone in this pyramid.",0);
+
+        mummy = new Character("Mummy", "An old wrapped up mummy. Maybe i can talk with it.", false);
+
+        cave.addItem(boulder);
+        pyramidCentre.addItem(torch);
+        artillery.addItem(bag);
+        artillery.addItem(gun);
+        sanctuary.addItem(water);
+        tomb.addItem(coffin);
+        sewer.addItem(bone);
+        treasureRoom.addItem(treasure);
+        artefact.addItem(vase);
+        hallOfStatues.addItem(statue);
+
+        mummyRoom.addCharacter(mummy);
+
+        while(mummy.isSatisfied() == true){
+            mummyRoom.setExit("west", testRoom);
+            testRoom.setExit("east", testRoom);
+        }
+
+        itemString.put(boulder, "boulder");
+        itemString.put(water, "water");
+        itemString.put(statue, "statue");
+        itemString.put(bag, "bag");
+        itemString.put(coffin, "coffin");
+        itemString.put(gun, "gun");
+        itemString.put(torch, "torch");
+        itemString.put(bone, "bone");
+        itemString.put(vase, "vase");
+        itemString.put(treasure, "treasure");
+
+        stringToItem = new HashMap<>();
+
+        stringToItem.put("boulder",boulder);
+        stringToItem.put("water", water);
+        stringToItem.put("statue",statue);
+        stringToItem.put("bag",bag);
+        stringToItem.put("coffin",coffin);
+        stringToItem.put("gun",gun);
+        stringToItem.put("torch",torch);
+        stringToItem.put("bone",bone);
+        stringToItem.put("vase", vase);
+        stringToItem.put("treasure",treasure);
+    }
+
+    /**
+     *  Main play routine.  Loops until end of play.
+     */
+    public void play() 
+    {            
+        printWelcome();
+
+        // Enter the main command loop.  Here we repeatedly read commands and
+        // execute them until the game is over.
+
+        boolean finished = false;
+        while (!finished) {
+            if(winGame() == true){
+                finished = winGame();
+            }
+            else{
+                Command command = parser.getCommand();
+                finished = processCommand(command);
+            }
+        }
+        System.out.println("Thank you for playing. Good bye.");
+    }
+
+    /**
+     * Print out the opening message for the player.
+     */
+    private void printWelcome()
+    {
+        System.out.println();
+        System.out.println("Welcome to the World of Zuul!");
+        System.out.println("The aim of the game is simple; explore the pyramid and collect all the artifacts.");
+        System.out.println("Type 'help' if you need help.");
+        System.out.println();
+        look();
+        System.out.println();
+    }
+
+    /**
+     * Given a command, process (that is: execute) the command.
+     * @param command The command to be processed.
+     * @return true If the command ends the game, false otherwise.
+     */
+    private boolean processCommand(Command command) 
+    {
+        boolean wantToQuit = false;
+
+        if(command.isUnknown()) {
+            System.out.println("I don't know what you mean...");
+            return false;
+        }
+
+        String commandWord = command.getCommandWord();
+        if (commandWord.equals("help")) {
+            printHelp();
+        }
+        else if (commandWord.equals("go")) {
+            goRoom(command);
+        }
+        else if (commandWord.equals("quit")) {
+            wantToQuit = quit(command);
+        }
+        else if (commandWord.equals("look")){
+            look();
+        }
+        else if (commandWord.equals("back")){
+            goBack();
+        }
+        else if (commandWord.equals("take")){
+            pickUp(command);
+        }
+        else if (commandWord.equals("drop")){
+            drop(command);
+        }
+        else if (commandWord.equals("inventory")){
+            showInventory();
+        }
+        else if (commandWord.equals("inspect")){
+            inspect(command);
+        }
+        else if (commandWord.equals("drink")){
+            drink(command);
+        }
+        else if (commandWord.equals("talk")){
+            talk();
+        }
+        else if (commandWord.equals("give")){
+            giveItem(command);
+        }
+        // else command not recognised.
+        return wantToQuit;
+    }
+
+    // implementations of user commands:
+
+    /**
+     * Print out some help information.
+     * Here we print some stupid, cryptic message and a list of the 
+     * command words.
+     */
+    private void printHelp() 
+    {
+        System.out.println("You are lost. You are alone. You wander");
+        System.out.println("around in the pyramid.");
+        System.out.println();
+        System.out.println("Your command words are:");
+        parser.showCommands();
+    }
+
+    /** 
+     * Try to in to one direction. If there is an exit, enter the new
+     * room, otherwise print an error message.
+     */
+    private void goRoom(Command command) 
+    {
+        if(!command.hasSecondWord()) {
+            // if there is no second word, we don't know where to go...
+            System.out.println("Go where?");
+            return;
+        }
+
+        String direction = command.getSecondWord();
+
+        // Try to leave current room.
+        Room nextRoom = currentRoom.getExit(direction);
+
+        if (nextRoom == null) {
+            System.out.println("There is no door!");
+        }
+        else if(nextRoom.isTransporterRoom()){
+            stackRooms.push(nextRoom);
+            currentRoom = getRandomRoom();
+            System.out.println("What happened?? Have i been teleported?");
+            look();
+        }
+        else {
+            stackRooms.push(currentRoom);
+            currentRoom = nextRoom;
+            System.out.println(currentRoom.getLongDescription());
+            getItemsInRoom();
+            if(currentRoom.containsCharacter(mummy)){
+                mummy.printCharacterDetails(); 
+            }
+        }
+    }
+
+    /**
+     * 
+     */
+    private void giveItem(Command command){
+        if(!command.hasSecondWord()) {
+            System.out.println("What would you like to give");
+            return;
+        }
+        else if(!command.hasThirdWord()){
+            System.out.println("Who would you like to give this item to?");
+            return;
+        }
+
+        String characterName = command.getThirdWord();
+        
+        String giveItem = command.getSecondWord();
+
+        Item item = getItemFromString(giveItem);
+
+        while(giveItem != null)
+        {
+            if(item == null)
+            {
+                System.out.println("There is no item of that name!");
+            }
+            else if(giveItem.equals("coffin")){
+                inventory.remove(item);
+                inventory.removeItemString(giveItem);
+                totalWeight -= item.returnItemWeight();
+                System.out.println("You have given the item '"+giveItem+"'to "+characterName+".");
+                satisfyCharacter();
+                talk();
+            }
+            else if(inventory.contains(item))
+            {
+                System.out.println("I don't think the " + characterName + " would want that.");
+            }
+            else {
+                System.out.println("You are not carrying an item of that name!");
+            }
+            return;
+        }
+    }
+
+    /**
+     * 
+     */
+    private void goBack()
+    {
+        if(stackRooms.empty()){
+            System.out.println("You can't go back further!");
+        }
+        else if(stackRooms.peek().isTransporterRoom()){
+            stackRooms.pop();
+            currentRoom = stackRooms.pop();
+            look();
+        }
+        else{
+            currentRoom = stackRooms.pop();
+            look();
+        }
+    }
+
+    /**
+     * 
+     */
+    private void pickUp(Command command)
+    {
+        String itemToPickUp = command.getSecondWord();
+
+        Item item = getItemFromString(itemToPickUp);
+
+        //boolean canPickUpItem = inventory.contains(item) || currentRoom.contains(item);
+        boolean canPickUpItem = currentRoom.contains(item);
+
+        while(!inventory.contains(getItemFromString("bag"))){
+            if(itemToPickUp.contains("bag") && canPickUpItem){
+                currentRoom.remove(item);
+                inventory.addItem(item);
+                inventory.addItemString(itemToPickUp);
+                System.out.println("Finally found my bag! Time to start the hunt!");
+                return;
+            }
+            else if (!inventory.contains(getItemFromString("bag"))){
+                System.out.println("I can't hold items until i find my bag!");
+                return;
+            }
+            else if (inventory.contains(getItemFromString("bag"))){
+                System.out.println("I already have my bag");
+                return;
+            }
+        }
+
+        if(!command.hasSecondWord()){
+            System.out.println("What would you like to take?");
+        }
+
+        while(item != null && canPickUpItem){
+            if(inventory.contains(item)){
+                System.out.println("You are already carrying this item");
+            }
+            else if(totalWeight + item.returnItemWeight() <= maximumWeight ){
+                inventory.addItem(item);
+                inventory.addItemString(itemToPickUp);
+                currentRoom.remove(item);
+                System.out.println(itemToPickUp + " has been added to your inventory");
+                totalWeight += item.returnItemWeight();
+            }
+            else{
+                System.out.println("This item is too heavy for me to carry!");
+            }
+            return;
+        }
+        System.out.println("There is no such item of that name in this room!");
+    }
+
+    /**
+     * 
+     */
+    private void drop(Command command)
+    {
+        if(!command.hasSecondWord())
+        {
+            System.out.println("What would you like to drop?");
+        }
+
+        String itemToDrop = command.getSecondWord();
+
+        Item item = getItemFromString(itemToDrop);
+
+        while(itemToDrop != null)
+        {
+            if(item == null)
+            {
+                System.out.println("There is no item of that name!");
+            }
+            else if (inventory.contains(item))
+            {
+                inventory.remove(item);
+                inventory.removeItemString(itemToDrop);
+                currentRoom.addItem(item);
+                totalWeight -= item.returnItemWeight();
+                System.out.println(itemToDrop + " has been dropped from your inventory");
+            }
+            else 
+            {
+                System.out.println("You are not carrying this item!");
+            }
+            return;
+        }
+    }
+
+    /**
+     * 
+     */
+    private void showInventory()
+    {
+        if(inventory.getSize() == 0)
+        {
+            System.out.println("Currently not carrying anything!");
+        }
+        else
+        {
+            System.out.println(inventory.stringOfItems());
+            System.out.println("Total Weight: "+totalWeight);
+        }
+    }
+
+    /**
+     * 
+     */
+    private void inspect(Command command)
+    {
+        if(!command.hasSecondWord())
+        {
+            System.out.println("What would you like to inspect?");
+        }
+
+        String inspect = command.getSecondWord();
+
+        Item item = getItemFromString(inspect);
+
+        if(item == null)
+        {
+            System.out.println("There is no item of that name!");
+        }
+        else{
+            item.printItemDetails();
+        }
+    }
+
+    /**
+     * 
+     */
+    private void drink(Command command)
+    {
+        if(!command.hasSecondWord())
+        {
+            System.out.println("What would you like to drink?");
+        }
+
+        String drinkItem = command.getSecondWord();
+
+        Item item = getItemFromString(drinkItem);
+
+        boolean canEatItem = inventory.contains(item) || currentRoom.contains(item);
+
+        while(item != null && canEatItem)
+        {
+            if(drinkItem.equals("water"))
+            {
+                maximumWeight = 35;
+                currentRoom.remove(item);
+                inventory.remove(item);
+                inventory.removeItemString(drinkItem);
+                currentRoom.remove(item);
+                System.out.println("You can now carry a total of 35 weight!");
+            }
+            else
+            {
+                System.out.println("I can't drink that!");
+            }
+            return;
+        }
+
+        if(item == null)
+        {
+            System.out.println("There is no item of that name!");
+        }
+    }
+
+    /** 
+     * "Quit" was entered. Check the rest of the command to see
+     * whether we really quit the game.
+     * @return true, if this command quits the game, false otherwise.
+     */
+    private boolean quit(Command command) 
+    {
+        if(command.hasSecondWord()) {
+            System.out.println("Quit what?");
+            return false;
+        }
+        else {
+            return true;  // signal that we want to quit
+        }
+    }
+
+    /**
+     * 
+     */
+    private void look()
+    {
+        System.out.println(currentRoom.getLongDescription());
+        getItemsInRoom();
+    }
+
+    /**
+     * 
+     */
+    private void getItemsInRoom()
+    {
+        while(currentRoom.getItemsInRoom().size() != 0){
+            String returnString = "Items:";
+            HashSet<Item> itemsInRoom = currentRoom.getItemsInRoom();
+            for(Item item : itemsInRoom) {
+                returnString += " " + returnItemString(item);
+            }
+            System.out.println(returnString);
+            return;
+        }
+        System.out.println("There are no items in this room");
+    }
+
+    /**
+     * 
+     */
+    private String returnItemString(Item item)
+    {
+        return itemString.get(item);
+    }
+
+    /**
+     * 
+     */
+    private Item getItemFromString(String item)
+    {
+        return stringToItem.get(item);
+    }
+
+    private void talk()
+    {
+        while(currentRoom.containsCharacter(mummy)){
+            //System.out.println("Type talk....");
+            if(mummy.isSatisfied()){
+                System.out.println("You found my coffin!! Thanks. Well i gave my "
+                    +"\nword so i'll let you into this room as you wish."
+                    +"\nYou can now enter a new room!");
+                currentRoom.getLongDescription();
+                return;
+            }
+            else if(!inventory.containsItemString("coffin")){
+                System.out.println("\nI am not allowed to let anyone into this room. "
+                    +"\nHowever if you can find my coffin, i might consider letting you in."
+                    +"\nCoffin's tend to be heavy so you might to find a magic "
+                    +"\nwater fountain that gives you super strenght.");
+                return;
+            }
+            System.out.println("I see you found my coffin. Give me the coffin so that i can let you through.");       
+            return;
+        }
+        System.out.println("There is no one to talk to in this room!");
+    }
+
+    private boolean winGame()
+    {
+        while(inventory != null){
+            if((inventory.getSize() == stringToItem.size()-2)){
+                System.out.println("Congratulations, you have completed the game!!");
+                return true;
+            }
+            return false;
+        }
+        return false;
+    }
+
+    private Room getRandomRoom()
+    {
+        int numberOfRooms = rooms.size();
+        return rooms.get(roomIndex.nextInt(numberOfRooms));
+    }
+
+    private boolean satisfyCharacter()
+    {
+        return mummy.toggleSatisfied();
+    }
+}
